@@ -71,9 +71,9 @@ body {
   <!-- Any section element inside of this container is displayed as a slide -->
   <div class="slides">
     <section>
-      <h1><img src="fhirbase.png" style="height: 1em; display: inline;"/> PostgreSQL</h1>
+      <h1><img src="fhirbase.png" style="height: 1em; display: inline;"/>fhirbase</h1>
       <hr/>
-      <h3>as health IT platform</h3>
+      <h3>PG as health IT platform</h3>
       <p>
       <small>by <a href="http://github.com/niquola">niquola</a></small>
       </p>
@@ -168,7 +168,6 @@ body {
       </script>
     </section>
 
-
     <section data-markdown>
       <script type="text/template">
 ## REST API
@@ -218,6 +217,109 @@ Content-Length: length
         <li>most of API</li>
       </ul>
     </section>
+
+    <section data-markdown>
+      <script type="text/template">
+## Modules
+```sql
+-- #module fhir_index
+-- #import ../jsonbext.sql
+-- #import ../coll.sql
+
+func index_primitive_as_token( content jsonb, path text[]) RETURNS text[]
+  SELECT
+  array_agg(jsonbext.jsonb_primitive_to_text(unnest::jsonb))::text[]
+  FROM unnest(jsonbext.json_get_in(content, path))
+```
+      </script>
+    </section>
+    <section data-markdown>
+      <script type="text/template">
+## Modules
+```sql
+
+test=# \df coll.*
+                          List of functions
+ Schema |   Name   | Result data type | Argument data types |  Type
+--------+----------+------------------+---------------------+--------
+ coll   | _butlast | anyarray         | _ar_ anyarray       | normal
+ coll   | _last    | anyelement       | _ar_ anyarray       | normal
+ coll   | _rest    | anyarray         | _ar_ anyarray       | normal
+(3 rows)
+```
+      </script>
+    </section>
+
+    <section data-markdown>
+      <script type="text/template">
+### Modules
+---
+* resolve deps
+* if digest_changed? (sha1)
+* drop_schema(x) & create_schema(x);
+* execute_ddl(x)
+* upsert into modules (module, digest) values (x, sha1(ddl)) where module = x;
+```
+      </script>
+    </section>
+
+    <section data-markdown>
+      <script type="text/template">
+### tests
+---
+
+```sql
+
+expect 'return last item'
+  coll._last('{1,2,3,4,5}'::varchar[])
+=> '5'
+
+-- or one-liner
+coll._last('{1,2,3,4,5}'::varchar[]) => '7'
+
+SELECT tests.expect(
+  'return last item',
+  '/home/devel/fhirbase-jsonb/test/coll_spec.sql:10',
+  coll._last('{1,2,3,4,5}'::varchar[]),
+  '5'
+);
+
+-- FAILED:
+--     EXPECTED:       7
+--     ACTUAL:         5
+--     FILE: /home/devel/fhirbase-jsonb/test/coll_spec.sql:10
+```
+      </script>
+    </section>
+
+
+    <section data-markdown>
+      <script type="text/template">
+        ## Metaprogramming
+```sql
+func! generate_tables(_resources_ text[]) returns text
+  SELECT
+  count(
+  gen._eval(
+    gen._tpl($SQL$
+     CREATE TABLE "{{tbl_name}}" ()
+     INHERITS (resource);
+     ALTER TABEL "{{tbl_name}}"
+     ...
+    $SQL$,
+    'tbl_name', lower(path[1])
+   )
+  )::text
+  )
+  FROM resources.resource_elements
+  WHERE array_length(path,1) = 1
+    AND _resources_ @> ARRAY[path[1]]
+```
+      </script>
+    </section>
+
+
+
 
     <section>
       <h1>Thx</h1>
