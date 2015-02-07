@@ -109,8 +109,8 @@ body {
       <script type="text/template">
         ### Health IT Complexity
         ---
-        * structural: 6dbs; > 400 tables
-        * semantic interop: > 100 dicts, terminoloigies
+        * structural: 6dbs; > 500 tables
+        * semantic interop: > 100 dicts, terminoloigies, ontology
       </script>
     </section>
     <section>
@@ -244,6 +244,14 @@ func index_primitive_as_token( content jsonb, path text[]) RETURNS text[]
     </section>
     <section data-markdown>
       <script type="text/template">
+      ## Libraries
+      ----
+      * apt-get
+      * rubygems
+      * maven
+      </script>
+    <section data-markdown>
+      <script type="text/template">
 ## Modules
 ```sql
 
@@ -275,6 +283,7 @@ test=# \df coll.*
       <script type="text/template">
     ### Testing
     ---
+    ![stp](stoppers.jpg)
       </script>
     </section>
 
@@ -362,6 +371,7 @@ SELECT idx.index_search_param('Patient','birthdate');
     <section data-markdown>
       <script type="text/template">
         ## Waiting
+        ----
         * jsonb funcs: update, merge etc
         * compressed jsonb
         * jsquery (ilike, functions)
