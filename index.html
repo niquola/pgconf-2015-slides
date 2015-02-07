@@ -26,7 +26,12 @@
 .reveal pre code {
   background: black;
   overflow: hidden;
-  max-height: 500px;
+  max-height: 600px;
+  width: 100%;
+}
+.reveal.center .slides {
+  width: 1000px !important;
+  height: 700px !important;
 }
 </style>
 
@@ -100,35 +105,26 @@ body {
         <img src="niquola.jpg" style="border:none; box-shado: none; background: transparent;"/>
     </section>
 
-    <section>
-      <h2>Agenda</h2>
-      <hr/>
-      <ul>
-        <li>FHIR</li>
-        <li>fhirbase</li>
-        <li>metaprogramming</li>
-        <li>code</li>
-        <li>jsonb</li>
-        <li>problems: functions, size</li>
-        <li>future jsquery, sharding</li>
-      </ul>
+    <section data-markdown>
+      <script type="text/template">
+        ### Health IT Complexity
+        ---
+        * structural: 6dbs; > 400 tables
+        * semantic interop: > 100 dicts, terminoloigies
+      </script>
     </section>
-
     <section>
       <img src="fhirl.png"/>
+      <hr/>
+      <h3> Fast Healthcare Interoperability Resources </h3>
       <hr/>
       <a href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img src="cc.png"/></a>
     </section>
 
     <section>
-      <h2>FHIR</h2>
+      <h2>Implementable: conectathons</h2>
       <hr/>
-      <ul>
-        <li>Fast </li>
-        <li>Healthcare </li>
-        <li>Interoperability </li>
-        <li>Resources</li>
-      </ul>
+      <img src="cat.jpg"/>
     </section>
 
     <section>
@@ -193,10 +189,17 @@ Content-Length: length
       </script>
     </section>
 
+
     <section>
-      <h2>connectathon</h2>
+      <h2> <img style="display:inline-block; height: 1em;" src="fhirbase.png"/> Fhirbase</h2>
       <hr/>
-      <img src="cat.jpg"/>
+      <h3> Storage for FHIR </h3>
+    </section>
+
+    <section>
+      <h2> <img style="display:inline-block; height: 1em;" src="fhirbase.png"/> polyglot</h2>
+      <hr/>
+      <img src="poly.jpg"/>
     </section>
 
     <section>
@@ -208,27 +211,33 @@ Content-Length: length
     </section>
 
     <section>
-      <h2> <img style="display:inline-block; height: 1em;" src="fhirbase.png"/> Fhirbase</h2>
+      <h3>Development in PG</h3>
       <hr/>
-      <ul>
-        <li>Open Source MIT</li>
-        <li>PostgreSQL: ACID, SQL</li>
-        <li>jsquery & VODKA index</li>
-        <li>most of API</li>
-      </ul>
+      <img src="ups.jpg"/>
+    </section>
+
+    <section>
+      <h3>Modules & Dependencies</h3>
+      <hr/>
+      <img src="deps.gif"/>
+      <h4>
+      <p>Like in JS 6y ago</p>
     </section>
 
     <section data-markdown>
       <script type="text/template">
-## Modules
+### Modules
+---
 ```sql
 -- #module fhir_index
+-- DROP AND CREATE SCHEMA fhir_index
 -- #import ../jsonbext.sql
 -- #import ../coll.sql
 
 func index_primitive_as_token( content jsonb, path text[]) RETURNS text[]
   SELECT
-  array_agg(jsonbext.jsonb_primitive_to_text(unnest::jsonb))::text[]
+    array_agg(
+      jsonbext.jsonb_primitive_to_text(unnest::jsonb))::text[]
   FROM unnest(jsonbext.json_get_in(content, path))
 ```
       </script>
@@ -242,9 +251,9 @@ test=# \df coll.*
                           List of functions
  Schema |   Name   | Result data type | Argument data types |  Type
 --------+----------+------------------+---------------------+--------
- coll   | _butlast | anyarray         | _ar_ anyarray       | normal
- coll   | _last    | anyelement       | _ar_ anyarray       | normal
- coll   | _rest    | anyarray         | _ar_ anyarray       | normal
+ coll   | butlast | anyarray         | _ar_ anyarray       | normal
+ coll   | last    | anyelement       | _ar_ anyarray       | normal
+ coll   | rest    | anyarray         | _ar_ anyarray       | normal
 (3 rows)
 ```
       </script>
@@ -258,8 +267,14 @@ test=# \df coll.*
 * if digest_changed? (sha1)
 * drop_schema(x) & create_schema(x);
 * execute_ddl(x)
-* upsert into modules (module, digest) values (x, sha1(ddl)) where module = x;
+* update module metadata
 ```
+      </script>
+    </section>
+    <section data-markdown>
+      <script type="text/template">
+    ### Testing
+    ---
       </script>
     </section>
 
@@ -269,7 +284,6 @@ test=# \df coll.*
 ---
 
 ```sql
-
 expect 'return last item'
   coll._last('{1,2,3,4,5}'::varchar[])
 => '5'
@@ -318,8 +332,61 @@ func! generate_tables(_resources_ text[]) returns text
       </script>
     </section>
 
+    <section data-markdown>
+      <script type="text/template">
+        ## fhirbase
+        ----
+        * load meta-data
+        * generate tables, indexes & procedures
+        * API functions: CRUD, search etc
+      </script>
+    </section>
 
+    <section data-markdown>
+      <script type="text/template">
+        ## API
+```sql
+SELECT generate.generate_base_tables();
+SELECT generate.generate_tables('{Patient}');
 
+SELECT crud.create('{"resourceType":"Patient", "id": 1, "birthDate":"1973"}');
+
+SELECT search.search('Patient', 'birthdate=>1970');
+SELECT crud.update('{"id":1, "birthDate":"1973"}');
+SELECT crud.history('Patient', 1);
+
+SELECT idx.index_search_param('Patient','birthdate');
+```
+      </script>
+    </section>
+    <section data-markdown>
+      <script type="text/template">
+        ## Waiting
+        * jsonb funcs: update, merge etc
+        * compressed jsonb
+        * jsquery (ilike, functions)
+        * VODKA (one index per doc)
+      </script>
+    </section>
+
+    <section data-markdown>
+      <script type="text/template">
+        ## Extending PostgreSQL
+        ----
+        #### Platform
+        #### JVM, CLR, JS
+      </script>
+    </section>
+
+    <section data-markdown>
+      <script type="text/template">
+        ## PostgreSQL
+        ----
+        * first class realtions
+        * first class functions
+        * modules, sugar, lambdas etc
+      </script>
+    </section>
 
     <section>
       <h1>Thx</h1>
